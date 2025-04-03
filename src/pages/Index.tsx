@@ -175,7 +175,7 @@ const Index = () => {
                   </div>
                   
                   <Button 
-                    className="w-full mt-4 instagram-gradient-bg hover:opacity-90"
+                    className="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white"
                     onClick={handleGenerate} 
                     disabled={!isGenerateEnabled || result.isLoading}
                   >
@@ -224,7 +224,7 @@ const Index = () => {
       </main>
       
       <footer className="py-6 text-center text-sm text-gray-500">
-        <p>© 2023 InstaSpark Caption Generator. All rights reserved.</p>
+        <p>© 2023 Social Matters Caption Generator. All rights reserved.</p>
       </footer>
     </div>
   );
