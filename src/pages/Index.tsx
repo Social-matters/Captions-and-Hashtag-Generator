@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -175,7 +174,7 @@ const Index = () => {
                   </div>
                   
                   <Button 
-                    className="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white"
+                    className="w-full mt-4 bg-black hover:bg-gray-800 text-white"
                     onClick={handleGenerate} 
                     disabled={!isGenerateEnabled || result.isLoading}
                   >

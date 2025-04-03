@@ -1,6 +1,5 @@
 
-// This file contains mock functions to simulate caption and hashtag generation
-// In a real app, these would call an API
+// This file contains functions to generate captions and hashtags using OpenAI's API
 
 export interface GeneratorInput {
   description?: string;
@@ -16,16 +15,103 @@ export interface GeneratorResult {
   isLoading: boolean;
 }
 
-// Mock function to simulate API call
+// OpenAI API configuration
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_API_KEY = ""; // Add your API key here
+
+// Function to generate captions and hashtags using OpenAI's ChatGPT API
 export async function generateCaptionAndHashtags(
   input: GeneratorInput
 ): Promise<{ caption: string; hashtags: string[] }> {
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  try {
+    if (!OPENAI_API_KEY) {
+      console.warn("OpenAI API key not provided, using mock data instead");
+      return generateMockData(input);
+    }
 
-  // In a real implementation, this would call an AI API
-  // For now, we'll use placeholder content
-  
+    let prompt = "";
+    
+    if (input.imageFile) {
+      // For image-based generation
+      prompt = `Analyze this image and generate a catchy Instagram caption that best suits it.
+                Also, provide ${input.hashtagCount} relevant and trending hashtags based on the image content.
+                ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
+                Ensure the caption is engaging and social media-friendly.
+                
+                Return the response in JSON format with 'caption' and 'hashtags' as keys.`;
+      
+      // Image-based prompts would require using OpenAI's Vision API
+      // For now, fallback to mock data for image uploads
+      console.log("Image-based generation not yet implemented, using mock data");
+      return generateMockData(input);
+    } else {
+      // For text-based generation
+      prompt = `Generate an engaging Instagram caption based on this post description: ${input.description}.
+                The post is related to ${input.niche}, so make sure the caption aligns with that.
+                ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
+                Also, generate ${input.hashtagCount} relevant and trending hashtags that fit the description and niche.
+                Keep the caption creative, engaging, and suitable for Instagram.
+                
+                Return the response in JSON format with 'caption' and 'hashtags' as keys.`;
+      
+      const response = await fetch(OPENAI_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "You are a professional social media content creator specializing in engaging Instagram captions and hashtags." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("OpenAI API error:", errorData);
+        return generateMockData(input);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      try {
+        // Try to parse the JSON response
+        const parsedContent = JSON.parse(content);
+        return {
+          caption: parsedContent.caption || "Error parsing API response",
+          hashtags: parsedContent.hashtags || []
+        };
+      } catch (parseError) {
+        console.error("Error parsing OpenAI response:", parseError);
+        
+        // Attempt to extract caption and hashtags from text response
+        const captionMatch = content.match(/caption[:\s]+(.*?)(?=hashtags|\n\n|$)/i);
+        const hashtagsMatch = content.match(/hashtags[:\s]+(.*?)(?=\n\n|$)/i);
+        
+        const caption = captionMatch ? captionMatch[1].trim() : "Error parsing API response";
+        const hashtagsString = hashtagsMatch ? hashtagsMatch[1].trim() : "";
+        const hashtags = hashtagsString
+          .split(/[\s,]+/)
+          .filter(tag => tag.startsWith("#") || tag.length > 0)
+          .map(tag => tag.startsWith("#") ? tag : `#${tag}`);
+        
+        return { caption, hashtags };
+      }
+    }
+  } catch (error) {
+    console.error("Error generating content:", error);
+    return generateMockData(input);
+  }
+}
+
+// Fallback function to generate mock data
+function generateMockData(input: GeneratorInput): { caption: string; hashtags: string[] } {
   const defaultCaptions = [
     "✨ Embracing every moment of this beautiful journey. The path may not always be clear, but the adventure is worth it!",
     "🌟 Life is about creating yourself, not finding yourself. Every day is a new opportunity to become a better version of you.",
@@ -41,9 +127,17 @@ export async function generateCaptionAndHashtags(
     "#art", "#instadaily", "#friends", "#repost", "#nature"
   ];
 
-  // Select a random caption
-  const caption = defaultCaptions[Math.floor(Math.random() * defaultCaptions.length)];
+  let caption = defaultCaptions[Math.floor(Math.random() * defaultCaptions.length)];
   
+  // If keywords were provided, try to include them in the caption
+  if (input.keywords) {
+    const keywordsList = input.keywords.split(',').map(k => k.trim());
+    if (keywordsList.length > 0) {
+      const randomKeyword = keywordsList[Math.floor(Math.random() * keywordsList.length)];
+      caption += ` ${randomKeyword} is truly inspiring!`;
+    }
+  }
+
   // Select random hashtags based on count
   const shuffled = [...defaultHashtags].sort(() => 0.5 - Math.random());
   const hashtags = shuffled.slice(0, input.hashtagCount);
