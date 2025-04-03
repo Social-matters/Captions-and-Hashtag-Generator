@@ -17,7 +17,7 @@ export interface GeneratorResult {
 
 // OpenAI API configuration
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_API_KEY = ""; // Add your API key here
+const OPENAI_API_KEY = "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";
 
 // Function to generate captions and hashtags using OpenAI's ChatGPT API
 export async function generateCaptionAndHashtags(
@@ -61,7 +61,7 @@ export async function generateCaptionAndHashtags(
           "Authorization": `Bearer ${OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
+          model: "gpt-4o-mini", // Using a modern OpenAI model
           messages: [
             { role: "system", content: "You are a professional social media content creator specializing in engaging Instagram captions and hashtags." },
             { role: "user", content: prompt }
