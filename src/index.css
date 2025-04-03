@@ -43,6 +43,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --social-yellow: 45 100% 50%;
+    --social-black: 0 0% 15%;
   }
 
   .dark {
@@ -95,9 +98,25 @@
 }
 
 .instagram-gradient-bg {
-  @apply bg-gradient-to-r from-instagram-orange via-instagram-pink to-instagram-purple bg-[length:400%_400%] animate-gradient;
+  @apply bg-gradient-to-r from-[#FFDC5E] via-[#FFDC5E] to-[#FFB800] bg-[length:400%_400%] animate-gradient;
 }
 
 .hashtag {
   @apply inline-block bg-gray-100 hover:bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2 cursor-pointer transition-colors;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 15s ease infinite;
 }
