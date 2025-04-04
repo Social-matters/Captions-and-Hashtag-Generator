@@ -30,9 +30,18 @@ export async function generateCaptionAndHashtags(
     }
 
     let prompt = "";
+    let messages = [];
+    
+    // System message to guide response format
+    const systemMessage = {
+      role: "system", 
+      content: "You are a professional social media content creator specializing in engaging Instagram captions and hashtags. Always respond with valid JSON in the format {\"caption\": \"your caption here\", \"hashtags\": [\"#tag1\", \"#tag2\", ...]}."
+    };
     
     if (input.imageFile) {
-      // For image-based generation
+      // Convert image to base64 for API
+      const base64Image = await fileToDataUrl(input.imageFile);
+      
       prompt = `Analyze this image and generate a catchy Instagram caption that best suits it.
                 Also, provide ${input.hashtagCount} relevant and trending hashtags based on the image content.
                 ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
@@ -40,10 +49,19 @@ export async function generateCaptionAndHashtags(
                 
                 Return the response in JSON format with 'caption' and 'hashtags' as keys.`;
       
-      // Image-based prompts would require using OpenAI's Vision API
-      // For now, fallback to mock data for image uploads
-      console.log("Image-based generation not yet implemented, using mock data");
-      return generateMockData(input);
+      // For image-based generation using gpt-4o's vision capabilities
+      messages = [
+        systemMessage,
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: base64Image } }
+          ]
+        }
+      ];
+      
+      console.log("Sending image-based request to OpenAI API");
     } else {
       // For text-based generation
       prompt = `Generate an engaging Instagram caption based on this post description: ${input.description}.
@@ -54,83 +72,82 @@ export async function generateCaptionAndHashtags(
                 
                 Return the response in JSON format with 'caption' and 'hashtags' as keys.`;
       
+      messages = [
+        systemMessage,
+        { role: "user", content: prompt }
+      ];
+      
       console.log("Sending request to OpenAI API with prompt:", prompt);
-      
-      const response = await fetch(OPENAI_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", // Using a modern OpenAI model
-          messages: [
-            { 
-              role: "system", 
-              content: "You are a professional social media content creator specializing in engaging Instagram captions and hashtags. Always respond with valid JSON in the format {\"caption\": \"your caption here\", \"hashtags\": [\"#tag1\", \"#tag2\", ...]}." 
-            },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
+    }
+    
+    const response = await fetch(OPENAI_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini", // Using a model with vision capabilities
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        return generateMockData(input);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("OpenAI API error:", errorData);
+      return generateMockData(input);
+    }
+
+    const data = await response.json();
+    console.log("OpenAI API response:", data);
+    
+    const content = data.choices[0].message.content;
+    console.log("Raw content from API:", content);
+    
+    try {
+      // Try to parse the JSON response
+      const parsedContent = JSON.parse(content);
+      return {
+        caption: parsedContent.caption || "Error parsing API response",
+        hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
+      };
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      
+      // More robust fallback content extraction
+      let caption = "Error parsing API response";
+      let hashtags: string[] = [];
+      
+      // Try to extract caption using regex
+      const captionMatch = content.match(/caption["\s:]+(.*?)(?=[",$]|hashtags|$)/is);
+      if (captionMatch && captionMatch[1]) {
+        caption = captionMatch[1].trim().replace(/^["']|["']$/g, '');
       }
-
-      const data = await response.json();
-      console.log("OpenAI API response:", data);
       
-      const content = data.choices[0].message.content;
-      console.log("Raw content from API:", content);
-      
-      try {
-        // Try to parse the JSON response
-        const parsedContent = JSON.parse(content);
-        return {
-          caption: parsedContent.caption || "Error parsing API response",
-          hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
-        };
-      } catch (parseError) {
-        console.error("Error parsing OpenAI response:", parseError);
-        
-        // More robust fallback content extraction
-        let caption = "Error parsing API response";
-        let hashtags: string[] = [];
-        
-        // Try to extract caption using regex
-        const captionMatch = content.match(/caption["\s:]+(.*?)(?=[",$]|hashtags|$)/is);
-        if (captionMatch && captionMatch[1]) {
-          caption = captionMatch[1].trim().replace(/^["']|["']$/g, '');
-        }
-        
-        // Try to extract hashtags using regex
-        const hashtagsMatch = content.match(/hashtags["\s:]+\[(.*?)\]/is);
-        if (hashtagsMatch && hashtagsMatch[1]) {
-          const hashtagsContent = hashtagsMatch[1].trim();
-          hashtags = hashtagsContent
-            .split(/,\s*/)
-            .map(tag => tag.trim().replace(/^["']|["']$/g, ''))
-            .filter(tag => tag.length > 0)
+      // Try to extract hashtags using regex
+      const hashtagsMatch = content.match(/hashtags["\s:]+\[(.*?)\]/is);
+      if (hashtagsMatch && hashtagsMatch[1]) {
+        const hashtagsContent = hashtagsMatch[1].trim();
+        hashtags = hashtagsContent
+          .split(/,\s*/)
+          .map(tag => tag.trim().replace(/^["']|["']$/g, ''))
+          .filter(tag => tag.length > 0)
+          .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
+      } else {
+        // Alternative approach if array format isn't found
+        const hashtagsText = content.match(/hashtags["\s:]+(.+?)(?=[\n}]|caption|$)/is);
+        if (hashtagsText && hashtagsText[1]) {
+          hashtags = hashtagsText[1]
+            .split(/[\s,]+/)
+            .filter(tag => tag.trim().length > 0)
+            .map(tag => tag.replace(/^["']|["']$/g, ''))
             .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
-        } else {
-          // Alternative approach if array format isn't found
-          const hashtagsText = content.match(/hashtags["\s:]+(.+?)(?=[\n}]|caption|$)/is);
-          if (hashtagsText && hashtagsText[1]) {
-            hashtags = hashtagsText[1]
-              .split(/[\s,]+/)
-              .filter(tag => tag.trim().length > 0)
-              .map(tag => tag.replace(/^["']|["']$/g, ''))
-              .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
-          }
         }
-        
-        return { caption, hashtags };
       }
+      
+      return { caption, hashtags };
     }
   } catch (error) {
     console.error("Error generating content:", error);
