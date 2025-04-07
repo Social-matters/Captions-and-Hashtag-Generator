@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,7 +46,11 @@ const Index = () => {
 
   const handleImageUpload = async (file: File) => {
     setImageFile(file);
-    const dataUrl = await fileToDataUrl(file);
+    const input: GeneratorInput = {
+      imageFile: file,
+      hashtagCount: hashtagCount
+    };
+    const dataUrl = await fileToDataUrl(input);
     setImagePreview(dataUrl);
     setActiveTab("image");
   };
