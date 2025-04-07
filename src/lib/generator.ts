@@ -1,4 +1,3 @@
-
 // This file contains functions to generate captions and hashtags using OpenAI's API
 
 export interface GeneratorInput {
@@ -17,7 +16,7 @@ export interface GeneratorResult {
 
 // OpenAI API configuration
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_API_KEY = "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";
+const OPENAI_API_KEY = "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";
 
 // Function to generate captions and hashtags using OpenAI's ChatGPT API
 export async function generateCaptionAndHashtags(
