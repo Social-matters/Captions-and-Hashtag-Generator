@@ -1,4 +1,5 @@
-// This file contains functions to generate captions and hashtags using OpenAI's API
+
+// This file contains functions to generate captions and hashtags using Google's Gemini API
 
 export interface GeneratorInput {
   description?: string;
@@ -14,119 +15,167 @@ export interface GeneratorResult {
   isLoading: boolean;
 }
 
-// OpenAI API configuration
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_API_KEY = "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";
+// Gemini API configuration
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_URL_VISION = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent";
+const GEMINI_API_KEY = "AIzaSyBqOJt6r_gRahFTOLFsZ-DvAbiJMVNOmCM";
 
-// Function to generate captions and hashtags using OpenAI's ChatGPT API
+// Function to generate captions and hashtags using Google's Gemini API
 export async function generateCaptionAndHashtags(
   input: GeneratorInput
 ): Promise<{ caption: string; hashtags: string[] }> {
   try {
-    if (!OPENAI_API_KEY) {
-      console.warn("OpenAI API key not provided, using mock data instead");
+    if (!GEMINI_API_KEY) {
+      console.warn("Gemini API key not provided, using mock data instead");
       return generateMockData(input);
     }
 
-    let prompt = "";
-    let messages = [];
-    
-    // System message to guide response format
-    const systemMessage = {
-      role: "system", 
-      content: "You are a professional social media content creator specializing in engaging Instagram captions and hashtags. Always respond with valid JSON in the format {\"caption\": \"your caption here\", \"hashtags\": [\"#tag1\", \"#tag2\", ...]}."
-    };
+    let apiUrl;
+    let requestBody;
     
     if (input.imageFile) {
-      // Convert image to base64 for API
-      const base64Image = await fileToDataUrl(input.imageFile);
+      // Handle image-based generation
+      console.log("Preparing image-based request for Gemini API");
       
-      prompt = `Analyze this image and generate a catchy Instagram caption that best suits it.
-                Also, provide ${input.hashtagCount} relevant and trending hashtags based on the image content.
-                ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
-                Ensure the caption is engaging and social media-friendly.
-                
-                Return the response in JSON format with 'caption' and 'hashtags' as keys.`;
+      // Convert image to base64
+      const base64Image = await fileToDataUrl(input);
+      if (!base64Image) {
+        console.error("Failed to convert image to base64");
+        return generateMockData(input);
+      }
       
-      // For image-based generation using gpt-4o's vision capabilities
-      messages = [
-        systemMessage,
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: base64Image } }
-          ]
+      // Remove the data URL prefix to get just the base64 content
+      const base64Data = base64Image.split(',')[1];
+      
+      apiUrl = `${GEMINI_API_URL_VISION}?key=${GEMINI_API_KEY}`;
+      
+      // Construct the prompt for image analysis
+      const promptText = `Analyze this image and generate a catchy Instagram caption that best suits it.
+                   Also, provide ${input.hashtagCount} relevant and trending hashtags based on the image content.
+                   ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
+                   Ensure the caption is engaging and social media-friendly.
+                   
+                   Format your response as a JSON object with two fields:
+                   1. "caption": A string containing the engaging caption
+                   2. "hashtags": An array of strings, each representing a hashtag (including the # symbol)
+                   
+                   Example response format:
+                   {
+                     "caption": "Your caption text here",
+                     "hashtags": ["#tag1", "#tag2", "#tag3"]
+                   }`;
+      
+      // Construct the request body for image-based generation
+      requestBody = {
+        contents: [
+          {
+            parts: [
+              { text: promptText },
+              {
+                inline_data: {
+                  mime_type: input.imageFile.type,
+                  data: base64Data
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800
         }
-      ];
+      };
       
-      console.log("Sending image-based request to OpenAI API");
+      console.log("Sending image-based request to Gemini API");
     } else {
-      // For text-based generation
-      prompt = `Generate an engaging Instagram caption based on this post description: ${input.description}.
-                The post is related to ${input.niche}, so make sure the caption aligns with that.
-                ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
-                Also, generate ${input.hashtagCount} relevant and trending hashtags that fit the description and niche.
-                Keep the caption creative, engaging, and suitable for Instagram.
-                
-                Return the response in JSON format with 'caption' and 'hashtags' as keys.`;
+      // Handle text-based generation
+      apiUrl = `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`;
       
-      messages = [
-        systemMessage,
-        { role: "user", content: prompt }
-      ];
+      // Construct the prompt for text-based generation
+      const promptText = `Generate an engaging Instagram caption based on this post description: ${input.description || 'a social media post'}.
+                   The post is related to ${input.niche || 'social media'}, so make sure the caption aligns with that.
+                   ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
+                   Also, generate ${input.hashtagCount} relevant and trending hashtags that fit the description and niche.
+                   Keep the caption creative, engaging, and suitable for Instagram.
+                   
+                   Format your response as a JSON object with two fields:
+                   1. "caption": A string containing the engaging caption
+                   2. "hashtags": An array of strings, each representing a hashtag (including the # symbol)
+                   
+                   Example response format:
+                   {
+                     "caption": "Your caption text here",
+                     "hashtags": ["#tag1", "#tag2", "#tag3"]
+                   }`;
       
-      console.log("Sending request to OpenAI API with prompt:", prompt);
+      // Construct the request body for text-based generation
+      requestBody = {
+        contents: [
+          {
+            parts: [
+              { text: promptText }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800
+        }
+      };
+      
+      console.log("Sending text-based request to Gemini API");
     }
     
-    const response = await fetch(OPENAI_API_URL, {
+    console.log("API URL:", apiUrl);
+    
+    // Make the API request
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini", // Using a model with vision capabilities
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 500
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
+      console.error("Gemini API error:", errorData);
       return generateMockData(input);
     }
 
     const data = await response.json();
-    console.log("OpenAI API response:", data);
+    console.log("Gemini API response:", data);
     
-    const content = data.choices[0].message.content;
+    // Extract text content from the response
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     console.log("Raw content from API:", content);
     
     try {
+      // Try to locate and parse JSON within the response
+      let jsonMatch = content.match(/\{[\s\S]*\}/);
+      let jsonContent = jsonMatch ? jsonMatch[0] : content;
+      
       // Try to parse the JSON response
-      const parsedContent = JSON.parse(content);
+      const parsedContent = JSON.parse(jsonContent);
       return {
-        caption: parsedContent.caption || "Error parsing API response",
+        caption: parsedContent.caption || "Failed to generate caption",
         hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
       };
     } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError);
+      console.error("Error parsing Gemini response:", parseError);
       
-      // More robust fallback content extraction
+      // Fallback content extraction using regex
       let caption = "Error parsing API response";
       let hashtags: string[] = [];
       
       // Try to extract caption using regex
-      const captionMatch = content.match(/caption["\s:]+(.*?)(?=[",$]|hashtags|$)/is);
+      const captionMatch = content.match(/caption["'\s:]+(.*?)(?=["',$]|hashtags|$)/is);
       if (captionMatch && captionMatch[1]) {
         caption = captionMatch[1].trim().replace(/^["']|["']$/g, '');
       }
       
       // Try to extract hashtags using regex
-      const hashtagsMatch = content.match(/hashtags["\s:]+\[(.*?)\]/is);
+      const hashtagsMatch = content.match(/hashtags["'\s:]+\[(.*?)\]/is);
       if (hashtagsMatch && hashtagsMatch[1]) {
         const hashtagsContent = hashtagsMatch[1].trim();
         hashtags = hashtagsContent
@@ -136,7 +185,7 @@ export async function generateCaptionAndHashtags(
           .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
       } else {
         // Alternative approach if array format isn't found
-        const hashtagsText = content.match(/hashtags["\s:]+(.+?)(?=[\n}]|caption|$)/is);
+        const hashtagsText = content.match(/hashtags["'\s:]+(.+?)(?=[\n}]|caption|$)/is);
         if (hashtagsText && hashtagsText[1]) {
           hashtags = hashtagsText[1]
             .split(/[\s,]+/)
@@ -152,6 +201,18 @@ export async function generateCaptionAndHashtags(
     console.error("Error generating content:", error);
     return generateMockData(input);
   }
+}
+
+// Helper function to convert an image file to base64 data URL
+async function fileToDataUrl(input: GeneratorInput): Promise<string | null> {
+  if (!input.imageFile) return null;
+  
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(input.imageFile);
+  });
 }
 
 // Fallback function to generate mock data
@@ -192,12 +253,5 @@ function generateMockData(input: GeneratorInput): { caption: string; hashtags: s
   };
 }
 
-// Function to generate a data URL from a File
-export function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+// Export fileToDataUrl for use in other files
+export { fileToDataUrl };
