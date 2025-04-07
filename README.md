@@ -7,9 +7,7 @@ A smart and intuitive tool that generates engaging Instagram captions and hastag
 
 🧠 Dual Input Modes: Generate captions using either custom text or an uploaded image.
 
-🎯 Style Customization: Choose from various tones and moods — such as funny, aesthetic, motivational, romantic, and more.
-
-🔗 Hashtags & Emojis: Automatically includes relevant hashtags and emojis to increase engagement.
+🎯 Hashtags Quantity: Select the quantity of the hashtags that you want to generate.
 
 🖼️ Image Understanding: Analyzes image content to produce meaningful and relevant captions.
 
