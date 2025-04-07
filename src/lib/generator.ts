@@ -16,8 +16,8 @@ export interface GeneratorResult {
 }
 
 // Gemini API configuration
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-const GEMINI_API_URL_VISION = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+const GEMINI_API_URL_VISION = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 const GEMINI_API_KEY = "AIzaSyBqOJt6r_gRahFTOLFsZ-DvAbiJMVNOmCM";
 
 // Function to generate captions and hashtags using Google's Gemini API
@@ -204,7 +204,7 @@ export async function generateCaptionAndHashtags(
 }
 
 // Helper function to convert an image file to base64 data URL
-async function fileToDataUrl(input: GeneratorInput): Promise<string | null> {
+export async function fileToDataUrl(input: GeneratorInput): Promise<string | null> {
   if (!input.imageFile) return null;
   
   return new Promise((resolve, reject) => {
@@ -252,6 +252,3 @@ function generateMockData(input: GeneratorInput): { caption: string; hashtags: s
     hashtags,
   };
 }
-
-// Export fileToDataUrl for use in other files
-export { fileToDataUrl };
