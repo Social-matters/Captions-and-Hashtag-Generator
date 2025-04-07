@@ -16,7 +16,7 @@ A smart and intuitive tool that generates engaging Instagram captions and hastag
 🌐 User-Friendly Interface: Clean and responsive design for a seamless user experience.
 
 
-🧠 <h3>How It Works</h3>
+  <h3>How It Works</h3>
 
 Enter Text: Describe your photo or post idea.
 
@@ -26,7 +26,7 @@ Choose a Caption Style: Select a tone that fits your vibe.
 
 Generate: Receive a unique, high-quality caption  and hashtags in seconds.
 
-📸 <h3>Demo</h3>
+<h3>Demo</h3>
 Coming soon: A live demo link or hosted version.
 
 
