@@ -227,7 +227,7 @@ const Index = () => {
       </main>
       
       <footer className="py-6 text-center text-sm text-gray-500">
-        <p>© 2023 Social Matters Caption Generator. All rights reserved.</p>
+        <p>© 2025 Social Matters Caption Generator. All rights reserved.</p>
       </footer>
     </div>
   );
