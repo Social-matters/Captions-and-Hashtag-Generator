@@ -1,6 +1,6 @@
 {
   "name": "instaspark/caption-hashtag-generator",
-  "description": "A tool that generates engaging Instagram captions and hashtags using AI.",
+  "description": "Dummy PHP config to pass Hostinger deployment check. This is a React + TypeScript app.",
   "type": "project",
   "require": {
     "php": "^7.4 || ^8.0"
