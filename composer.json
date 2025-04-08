@@ -1,9 +1,8 @@
-
 {
-    "name": "instaspark/caption-hashtag-generator",
-    "description": "A tool that generates engaging Instagram captions and hashtags using AI",
-    "type": "project",
-    "require": {
-        "php": "^7.4|^8.0"
-    }
+  "name": "instaspark/caption-hashtag-generator",
+  "description": "A tool that generates engaging Instagram captions and hashtags using AI.",
+  "type": "project",
+  "require": {
+    "php": "^7.4 || ^8.0"
+  }
 }
