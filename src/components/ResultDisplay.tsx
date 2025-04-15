@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, RefreshCw } from "lucide-react";
@@ -45,12 +44,12 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
   };
 
   return (
-    <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm">
+    <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm bg-background">
       {onRegenerate && (
         <Button 
           onClick={onRegenerate}
           variant="outline"
-          className="w-full mb-4"
+          className="w-full mb-4 bg-purple-600 hover:bg-purple-700 text-white"
         >
           <RefreshCw className="mr-2 h-4 w-4" />
           Generate New Version
@@ -59,7 +58,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Your Caption</h3>
+          <h3 className="text-lg font-semibold text-foreground">Your Caption</h3>
           <Button
             variant="outline"
             size="sm"
@@ -74,8 +73,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
             {captionCopied ? "Copied!" : "Copy Caption"}
           </Button>
         </div>
-        <div className="rounded-lg bg-gray-50 p-4">
-          <p className="whitespace-pre-line">{caption}</p>
+        <div className="rounded-lg bg-gray-800 p-4">
+          <p className="whitespace-pre-line text-white">{caption}</p>
         </div>
       </div>
 
@@ -107,7 +106,10 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
         </div>
       </div>
 
-      <Button onClick={handleCopyAll} className="w-full">
+      <Button 
+        onClick={handleCopyAll} 
+        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+      >
         <Copy className="mr-2 h-4 w-4" /> Copy Caption & Hashtags
       </Button>
     </div>

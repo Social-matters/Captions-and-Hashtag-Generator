@@ -180,7 +180,7 @@ const Index = () => {
                   </div>
                   
                   <Button 
-                    className="w-full mt-4 bg-black hover:bg-gray-800 text-white"
+                    className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white"
                     onClick={handleGenerate} 
                     disabled={!isGenerateEnabled || result.isLoading}
                   >
