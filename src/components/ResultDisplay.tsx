@@ -1,15 +1,16 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ResultDisplayProps {
   caption: string;
   hashtags: string[];
+  onRegenerate?: () => void;
 }
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags }) => {
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRegenerate }) => {
   const { toast } = useToast();
   const [captionCopied, setCaptionCopied] = React.useState(false);
   const [hashtagsCopied, setHashtagsCopied] = React.useState(false);
@@ -45,6 +46,17 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags }) => {
 
   return (
     <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm">
+      {onRegenerate && (
+        <Button 
+          onClick={onRegenerate}
+          variant="outline"
+          className="w-full mb-4"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Generate New Version
+        </Button>
+      )}
+
       <div>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Your Caption</h3>

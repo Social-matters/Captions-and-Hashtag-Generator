@@ -89,6 +89,10 @@ const Index = () => {
     }
   };
 
+  const handleRegenerate = () => {
+    handleGenerate();
+  };
+
   const isTextTabValid = description.trim().length > 0 && niche.trim().length > 0;
   const isImageTabValid = !!imageFile;
   const isGenerateEnabled = (activeTab === "text" && isTextTabValid) || (activeTab === "image" && isImageTabValid);
@@ -206,7 +210,11 @@ const Index = () => {
                     <p className="text-gray-400">Crafting the perfect caption...</p>
                   </div>
                 ) : showResult ? (
-                  <ResultDisplay caption={result.caption} hashtags={result.hashtags} />
+                  <ResultDisplay 
+                    caption={result.caption} 
+                    hashtags={result.hashtags}
+                    onRegenerate={handleRegenerate}
+                  />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <div className="w-24 h-24 rounded-full instagram-gradient-bg flex items-center justify-center mb-4">
