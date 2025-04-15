@@ -96,11 +96,11 @@ const Index = () => {
   const isGenerateEnabled = (activeTab === "text" && isTextTabValid) || (activeTab === "image" && isImageTabValid);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-4 pb-16">
-        <Card className="max-w-4xl mx-auto">
+        <Card className="max-w-4xl mx-auto bg-card text-card-foreground">
           <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="w-full lg:w-1/2">
@@ -226,7 +226,7 @@ const Index = () => {
         </Card>
       </main>
       
-      <footer className="py-6 text-center text-sm text-gray-500">
+      <footer className="py-6 text-center text-sm text-gray-400">
         <p>© 2025 Social Matters Caption Generator. All rights reserved.</p>
       </footer>
     </div>
