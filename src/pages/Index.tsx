@@ -27,7 +27,6 @@ import {
 const Index = () => {
   const [activeTab, setActiveTab] = useState<string>("text");
   
-  // Form inputs
   const [description, setDescription] = useState<string>("");
   const [niche, setNiche] = useState<string>("");
   const [keywords, setKeywords] = useState<string>("");
@@ -35,7 +34,6 @@ const Index = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  // Generation results
   const [result, setResult] = useState<GeneratorResult>({
     caption: "",
     hashtags: [],
@@ -155,7 +153,7 @@ const Index = () => {
                       value={keywords}
                       onChange={(e) => setKeywords(e.target.value)}
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Add specific words you want to include in your caption and hashtags
                     </p>
                   </div>
@@ -204,8 +202,8 @@ const Index = () => {
               <div className="w-full lg:w-1/2">
                 {result.isLoading ? (
                   <div className="flex flex-col items-center justify-center h-full">
-                    <Loader2 className="h-12 w-12 text-instagram-purple animate-spin mb-4" />
-                    <p className="text-gray-500">Crafting the perfect caption...</p>
+                    <Loader2 className="h-12 w-12 text-instagram-yellow animate-spin mb-4" />
+                    <p className="text-gray-400">Crafting the perfect caption...</p>
                   </div>
                 ) : showResult ? (
                   <ResultDisplay caption={result.caption} hashtags={result.hashtags} />
@@ -215,7 +213,7 @@ const Index = () => {
                       <Sparkles className="h-12 w-12 text-white" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">Your Caption Will Appear Here</h3>
-                    <p className="text-gray-500 max-w-xs">
+                    <p className="text-gray-400 max-w-xs">
                       Fill in the details and click generate to create your Instagram caption and hashtags
                     </p>
                   </div>
