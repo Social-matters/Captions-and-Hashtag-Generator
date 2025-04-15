@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, RefreshCw } from "lucide-react";
@@ -49,7 +50,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
         <Button 
           onClick={onRegenerate}
           variant="outline"
-          className="w-full mb-4 bg-purple-600 hover:bg-purple-700 text-white"
+          className="w-full mb-4 bg-gray-600 hover:bg-gray-700 text-white"
         >
           <RefreshCw className="mr-2 h-4 w-4" />
           Generate New Version
@@ -108,7 +109,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
 
       <Button 
         onClick={handleCopyAll} 
-        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+        className="w-full bg-gray-600 hover:bg-gray-700 text-white"
       >
         <Copy className="mr-2 h-4 w-4" /> Copy Caption & Hashtags
       </Button>

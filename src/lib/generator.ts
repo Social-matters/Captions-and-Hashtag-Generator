@@ -7,6 +7,8 @@ export interface GeneratorInput {
   keywords?: string;
   hashtagCount: number;
   imageFile?: File | null;
+  randomSeed?: string; // Add randomness parameter
+  generationCount?: number; // Track generation attempts
 }
 
 export interface GeneratorResult {
@@ -49,11 +51,18 @@ export async function generateCaptionAndHashtags(
       
       apiUrl = `${GEMINI_API_URL_VISION}?key=${GEMINI_API_KEY}`;
       
-      // Construct the prompt for image analysis
-      const promptText = `Analyze this image and generate a catchy Instagram caption that best suits it.
+      // Construct the prompt for image analysis with more variation instructions
+      const promptText = `Analyze this image and generate a completely fresh and unique Instagram caption that best suits it.
+                   Create a caption that is very different from standard templates.
+                   Be creative, unexpected, and original.
                    Also, provide ${input.hashtagCount} relevant and trending hashtags based on the image content.
                    ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
                    Ensure the caption is engaging and social media-friendly.
+                   
+                   Important: Make sure your caption is unique and not repetitive (this is request #${input.generationCount || 1}).
+                   Use a distinct writing style and approach from previous generations.
+                   
+                   Random seed: ${input.randomSeed || Math.random().toString()}
                    
                    Format your response as a JSON object with two fields:
                    1. "caption": A string containing the engaging caption
@@ -65,7 +74,7 @@ export async function generateCaptionAndHashtags(
                      "hashtags": ["#tag1", "#tag2", "#tag3"]
                    }`;
       
-      // Construct the request body for image-based generation
+      // Construct the request body with higher temperature for more randomness
       requestBody = {
         contents: [
           {
@@ -81,8 +90,10 @@ export async function generateCaptionAndHashtags(
           }
         ],
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 800
+          temperature: 0.9, // Increased from 0.7 for more variety
+          maxOutputTokens: 800,
+          topP: 0.95, // Adding topP parameter for more diversity
+          topK: 40 // Adding topK parameter for more diversity
         }
       };
       
@@ -91,10 +102,16 @@ export async function generateCaptionAndHashtags(
       // Handle text-based generation
       apiUrl = `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`;
       
-      // Construct the prompt for text-based generation
-      const promptText = `Generate an engaging Instagram caption based on this post description: ${input.description || 'a social media post'}.
+      // Construct the prompt for text-based generation with more variation instructions
+      const promptText = `Generate a FRESH, UNIQUE, and CREATIVE Instagram caption based on this post description: ${input.description || 'a social media post'}.
                    The post is related to ${input.niche || 'social media'}, so make sure the caption aligns with that.
                    ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
+                   
+                   IMPORTANT: This is generation attempt #${input.generationCount || 1}, so your caption must be COMPLETELY DIFFERENT from standard templates or previous generations.
+                   Be creative, unexpected, and original - avoid clichés and standard social media language.
+                   
+                   Random seed: ${input.randomSeed || Math.random().toString()}
+                   
                    Also, generate ${input.hashtagCount} relevant and trending hashtags that fit the description and niche.
                    Keep the caption creative, engaging, and suitable for Instagram.
                    
@@ -108,7 +125,7 @@ export async function generateCaptionAndHashtags(
                      "hashtags": ["#tag1", "#tag2", "#tag3"]
                    }`;
       
-      // Construct the request body for text-based generation
+      // Construct the request body with higher temperature for more randomness
       requestBody = {
         contents: [
           {
@@ -118,8 +135,10 @@ export async function generateCaptionAndHashtags(
           }
         ],
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 800
+          temperature: 0.9, // Increased from 0.7 for more variety
+          maxOutputTokens: 800,
+          topP: 0.95, // Adding topP parameter for more diversity
+          topK: 40 // Adding topK parameter for more diversity
         }
       };
       
@@ -215,36 +234,77 @@ export async function fileToDataUrl(input: GeneratorInput): Promise<string | nul
   });
 }
 
-// Fallback function to generate mock data
+// Fallback function to generate mock data with more variety
 function generateMockData(input: GeneratorInput): { caption: string; hashtags: string[] } {
+  // Add generation count to ensure different captions each time
+  const generationCount = input.generationCount || 0;
+  
+  // More varied caption templates
   const defaultCaptions = [
     "✨ Embracing every moment of this beautiful journey. The path may not always be clear, but the adventure is worth it!",
     "🌟 Life is about creating yourself, not finding yourself. Every day is a new opportunity to become a better version of you.",
     "🚀 Taking small steps every day. Progress isn't always visible, but it's happening. Keep going!",
     "🌈 Sometimes the smallest things take up the most room in your heart. Cherishing these little moments.",
-    "🔥 The dream is free, but the hustle is sold separately. Working on turning dreams into reality one day at a time."
+    "🔥 The dream is free, but the hustle is sold separately. Working on turning dreams into reality one day at a time.",
+    "💭 Not everything you face in life can be changed, but nothing can be changed until you face it.",
+    "🌊 Finding beauty in the journey, not just the destination. Each step reveals something new.",
+    "💫 The best views come after the hardest climbs. Never stop pushing your limits.",
+    "🌱 Growth requires patience. Plant the seeds today for tomorrow's garden.",
+    "🎭 Life isn't about finding yourself, it's about creating yourself. Write your own story.",
+    "🧩 Every challenge is just a puzzle waiting to be solved. Find the right pieces.",
+    "⏱️ Time is the most valuable currency. Spend it on what truly matters.",
+    "📸 Capturing this moment not just with my camera, but with my heart.",
+    "🌙 Even in darkness, there are stars. Look up and find your light."
   ];
   
+  // More varied hashtag options
   const defaultHashtags = [
     "#instagood", "#photooftheday", "#love", "#fashion", "#beautiful", 
     "#happy", "#cute", "#tbt", "#like4like", "#followme", 
     "#picoftheday", "#follow", "#me", "#selfie", "#summer",
-    "#art", "#instadaily", "#friends", "#repost", "#nature"
+    "#art", "#instadaily", "#friends", "#repost", "#nature",
+    "#smile", "#style", "#instalike", "#food", "#family",
+    "#travel", "#likeforlike", "#fitness", "#igers", "#tagsforlikes",
+    "#handmade", "#lifestyle", "#nofilter", "#sustainability", "#wellness",
+    "#vibes", "#explore", "#motivation", "#adventure", "#photography",
+    "#positivevibes", "#inspire", "#entrepreneur", "#goals", "#mindfulness"
   ];
 
-  let caption = defaultCaptions[Math.floor(Math.random() * defaultCaptions.length)];
+  // Use generation count to select different caption each time
+  const captionIndex = (generationCount % defaultCaptions.length);
+  let caption = defaultCaptions[captionIndex];
   
   // If keywords were provided, try to include them in the caption
   if (input.keywords) {
     const keywordsList = input.keywords.split(',').map(k => k.trim());
     if (keywordsList.length > 0) {
       const randomKeyword = keywordsList[Math.floor(Math.random() * keywordsList.length)];
-      caption += ` ${randomKeyword} is truly inspiring!`;
+      
+      // Different ways to incorporate keywords based on generation count
+      const incorporations = [
+        ` ${randomKeyword} is truly inspiring!`,
+        ` When it comes to ${randomKeyword}, nothing compares.`,
+        ` The magic of ${randomKeyword} never ceases to amaze me.`,
+        ` Finding joy in ${randomKeyword} every single day.`,
+        ` ${randomKeyword} changes everything about how I see the world.`
+      ];
+      
+      const incorporationIndex = generationCount % incorporations.length;
+      caption += incorporations[incorporationIndex];
     }
   }
 
-  // Select random hashtags based on count
-  const shuffled = [...defaultHashtags].sort(() => 0.5 - Math.random());
+  // Select random hashtags based on count and ensure they're different each time
+  const seed = input.randomSeed || generationCount.toString();
+  const seedNum = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  // Create a pseudo-random but deterministic shuffle based on the seed
+  const shuffled = [...defaultHashtags].sort((a, b) => {
+    const hashA = (a.charCodeAt(0) * seedNum) % 100;
+    const hashB = (b.charCodeAt(0) * seedNum) % 100;
+    return hashA - hashB;
+  });
+  
   const hashtags = shuffled.slice(0, input.hashtagCount);
 
   return {

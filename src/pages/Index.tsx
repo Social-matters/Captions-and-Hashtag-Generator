@@ -41,6 +41,7 @@ const Index = () => {
   });
   
   const [showResult, setShowResult] = useState<boolean>(false);
+  const [generationCount, setGenerationCount] = useState<number>(0);
 
   const handleImageUpload = async (file: File) => {
     setImageFile(file);
@@ -63,12 +64,16 @@ const Index = () => {
     setShowResult(false);
     
     try {
+      setGenerationCount(prevCount => prevCount + 1);
+      
       const input: GeneratorInput = {
         description: activeTab === "text" ? description : undefined,
         niche: activeTab === "text" ? niche : undefined,
         keywords: keywords || undefined,
         hashtagCount: hashtagCount,
-        imageFile: activeTab === "image" ? imageFile : null
+        imageFile: activeTab === "image" ? imageFile : null,
+        randomSeed: Math.random().toString(),
+        generationCount: generationCount
       };
       
       const generatedResult = await generateCaptionAndHashtags(input);
@@ -180,7 +185,7 @@ const Index = () => {
                   </div>
                   
                   <Button 
-                    className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white"
+                    className="w-full mt-4 bg-gray-600 hover:bg-gray-700 text-white"
                     onClick={handleGenerate} 
                     disabled={!isGenerateEnabled || result.isLoading}
                   >
