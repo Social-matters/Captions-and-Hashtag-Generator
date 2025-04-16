@@ -1,5 +1,6 @@
-
-// This file contains functions to generate captions and hashtags using Google's Gemini API
+// Configuration for DeepSeek API
+const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
+const DEEPSEEK_API_KEY = "sk-26e219cc0c05449db71c747f7e9d231b";
 
 export interface GeneratorInput {
   description?: string;
@@ -7,8 +8,8 @@ export interface GeneratorInput {
   keywords?: string;
   hashtagCount: number;
   imageFile?: File | null;
-  randomSeed?: string; // Add randomness parameter
-  generationCount?: number; // Track generation attempts
+  randomSeed?: string;
+  generationCount?: number;
 }
 
 export interface GeneratorResult {
@@ -17,204 +18,75 @@ export interface GeneratorResult {
   isLoading: boolean;
 }
 
-// Gemini API configuration
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
-const GEMINI_API_URL_VISION = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
-const GEMINI_API_KEY = "AIzaSyBqOJt6r_gRahFTOLFsZ-DvAbiJMVNOmCM";
-
-// Function to generate captions and hashtags using Google's Gemini API
 export async function generateCaptionAndHashtags(
   input: GeneratorInput
 ): Promise<{ caption: string; hashtags: string[] }> {
   try {
-    if (!GEMINI_API_KEY) {
-      console.warn("Gemini API key not provided, using mock data instead");
-      return generateMockData(input);
-    }
+    // Create a more dynamic prompt that encourages variety
+    const basePrompt = `Generate a COMPLETELY UNIQUE and CREATIVE Instagram caption
+      ${input.description ? `about: ${input.description}` : ''}
+      ${input.niche ? `in the ${input.niche} niche` : ''}
+      ${input.keywords ? `incorporating these keywords if possible: ${input.keywords}` : ''}
+      
+      IMPORTANT REQUIREMENTS:
+      - Make this caption (#${input.generationCount || 1}) COMPLETELY DIFFERENT from previous ones
+      - Use fresh, original language and structure
+      - Avoid clichés and common social media phrases
+      - Make it engaging and authentic
+      - Include ${input.hashtagCount} relevant and trending hashtags
+      
+      Random seed for variety: ${input.randomSeed || Math.random()}
+      
+      Format response as JSON:
+      {
+        "caption": "your unique caption here",
+        "hashtags": ["#hashtag1", "#hashtag2", ...]
+      }`;
 
-    let apiUrl;
-    let requestBody;
-    
-    if (input.imageFile) {
-      // Handle image-based generation
-      console.log("Preparing image-based request for Gemini API");
-      
-      // Convert image to base64
-      const base64Image = await fileToDataUrl(input);
-      if (!base64Image) {
-        console.error("Failed to convert image to base64");
-        return generateMockData(input);
-      }
-      
-      // Remove the data URL prefix to get just the base64 content
-      const base64Data = base64Image.split(',')[1];
-      
-      apiUrl = `${GEMINI_API_URL_VISION}?key=${GEMINI_API_KEY}`;
-      
-      // Construct the prompt for image analysis with more variation instructions
-      const promptText = `Analyze this image and generate a completely fresh and unique Instagram caption that best suits it.
-                   Create a caption that is very different from standard templates.
-                   Be creative, unexpected, and original.
-                   Also, provide ${input.hashtagCount} relevant and trending hashtags based on the image content.
-                   ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
-                   Ensure the caption is engaging and social media-friendly.
-                   
-                   Important: Make sure your caption is unique and not repetitive (this is request #${input.generationCount || 1}).
-                   Use a distinct writing style and approach from previous generations.
-                   
-                   Random seed: ${input.randomSeed || Math.random().toString()}
-                   
-                   Format your response as a JSON object with two fields:
-                   1. "caption": A string containing the engaging caption
-                   2. "hashtags": An array of strings, each representing a hashtag (including the # symbol)
-                   
-                   Example response format:
-                   {
-                     "caption": "Your caption text here",
-                     "hashtags": ["#tag1", "#tag2", "#tag3"]
-                   }`;
-      
-      // Construct the request body with higher temperature for more randomness
-      requestBody = {
-        contents: [
-          {
-            parts: [
-              { text: promptText },
-              {
-                inline_data: {
-                  mime_type: input.imageFile.type,
-                  data: base64Data
-                }
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.9, // Increased from 0.7 for more variety
-          maxOutputTokens: 800,
-          topP: 0.95, // Adding topP parameter for more diversity
-          topK: 40 // Adding topK parameter for more diversity
-        }
-      };
-      
-      console.log("Sending image-based request to Gemini API");
-    } else {
-      // Handle text-based generation
-      apiUrl = `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`;
-      
-      // Construct the prompt for text-based generation with more variation instructions
-      const promptText = `Generate a FRESH, UNIQUE, and CREATIVE Instagram caption based on this post description: ${input.description || 'a social media post'}.
-                   The post is related to ${input.niche || 'social media'}, so make sure the caption aligns with that.
-                   ${input.keywords ? `Use these keywords if possible: ${input.keywords}` : ""}
-                   
-                   IMPORTANT: This is generation attempt #${input.generationCount || 1}, so your caption must be COMPLETELY DIFFERENT from standard templates or previous generations.
-                   Be creative, unexpected, and original - avoid clichés and standard social media language.
-                   
-                   Random seed: ${input.randomSeed || Math.random().toString()}
-                   
-                   Also, generate ${input.hashtagCount} relevant and trending hashtags that fit the description and niche.
-                   Keep the caption creative, engaging, and suitable for Instagram.
-                   
-                   Format your response as a JSON object with two fields:
-                   1. "caption": A string containing the engaging caption
-                   2. "hashtags": An array of strings, each representing a hashtag (including the # symbol)
-                   
-                   Example response format:
-                   {
-                     "caption": "Your caption text here",
-                     "hashtags": ["#tag1", "#tag2", "#tag3"]
-                   }`;
-      
-      // Construct the request body with higher temperature for more randomness
-      requestBody = {
-        contents: [
-          {
-            parts: [
-              { text: promptText }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.9, // Increased from 0.7 for more variety
-          maxOutputTokens: 800,
-          topP: 0.95, // Adding topP parameter for more diversity
-          topK: 40 // Adding topK parameter for more diversity
-        }
-      };
-      
-      console.log("Sending text-based request to Gemini API");
-    }
-    
-    console.log("API URL:", apiUrl);
-    
-    // Make the API request
-    const response = await fetch(apiUrl, {
+    // Prepare the API request
+    const response = await fetch(DEEPSEEK_API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "user",
+            content: basePrompt
+          }
+        ],
+        temperature: 1.2, // Higher temperature for more creativity
+        max_tokens: 1000,
+        top_p: 0.95,
+        frequency_penalty: 1.5, // Increased to reduce repetition
+        presence_penalty: 1.2 // Increased to encourage new content
+      })
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Gemini API error:", errorData);
+      console.error("DeepSeek API error:", await response.text());
       return generateMockData(input);
     }
 
     const data = await response.json();
-    console.log("Gemini API response:", data);
-    
-    // Extract text content from the response
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    console.log("Raw content from API:", content);
-    
+    const content = data.choices?.[0]?.message?.content || "";
+
     try {
-      // Try to locate and parse JSON within the response
-      let jsonMatch = content.match(/\{[\s\S]*\}/);
-      let jsonContent = jsonMatch ? jsonMatch[0] : content;
-      
-      // Try to parse the JSON response
+      // Extract JSON from the response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonContent = jsonMatch ? jsonMatch[0] : content;
       const parsedContent = JSON.parse(jsonContent);
+
       return {
         caption: parsedContent.caption || "Failed to generate caption",
         hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
       };
     } catch (parseError) {
-      console.error("Error parsing Gemini response:", parseError);
-      
-      // Fallback content extraction using regex
-      let caption = "Error parsing API response";
-      let hashtags: string[] = [];
-      
-      // Try to extract caption using regex
-      const captionMatch = content.match(/caption["'\s:]+(.*?)(?=["',$]|hashtags|$)/is);
-      if (captionMatch && captionMatch[1]) {
-        caption = captionMatch[1].trim().replace(/^["']|["']$/g, '');
-      }
-      
-      // Try to extract hashtags using regex
-      const hashtagsMatch = content.match(/hashtags["'\s:]+\[(.*?)\]/is);
-      if (hashtagsMatch && hashtagsMatch[1]) {
-        const hashtagsContent = hashtagsMatch[1].trim();
-        hashtags = hashtagsContent
-          .split(/,\s*/)
-          .map(tag => tag.trim().replace(/^["']|["']$/g, ''))
-          .filter(tag => tag.length > 0)
-          .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
-      } else {
-        // Alternative approach if array format isn't found
-        const hashtagsText = content.match(/hashtags["'\s:]+(.+?)(?=[\n}]|caption|$)/is);
-        if (hashtagsText && hashtagsText[1]) {
-          hashtags = hashtagsText[1]
-            .split(/[\s,]+/)
-            .filter(tag => tag.trim().length > 0)
-            .map(tag => tag.replace(/^["']|["']$/g, ''))
-            .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
-        }
-      }
-      
-      return { caption, hashtags };
+      console.error("Error parsing DeepSeek response:", parseError);
+      return generateMockData(input);
     }
   } catch (error) {
     console.error("Error generating content:", error);
