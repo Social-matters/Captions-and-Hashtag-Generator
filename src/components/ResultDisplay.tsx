@@ -99,7 +99,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
         <div className="rounded-lg bg-gray-800 p-4">
           <div className="flex flex-wrap">
             {hashtags.map((tag, index) => (
-              <span key={index} className="hashtag">
+              <span key={index} className="hashtag text-white mr-2 mb-2">
                 {tag}
               </span>
             ))}
