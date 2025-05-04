@@ -3,6 +3,10 @@
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 const DEEPSEEK_API_KEY = "sk-6ea32ade1f634df9a42848510db43eba";
 
+// Fallback to OpenAI if DeepSeek fails
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_API_KEY = "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";
+
 export interface GeneratorInput {
   description?: string;
   niche?: string;
@@ -17,11 +21,12 @@ export interface GeneratorResult {
   caption: string;
   hashtags: string[];
   isLoading: boolean;
+  error?: string;
 }
 
 export async function generateCaptionAndHashtags(
   input: GeneratorInput
-): Promise<{ caption: string; hashtags: string[] }> {
+): Promise<{ caption: string; hashtags: string[]; error?: string }> {
   try {
     // Create a more dynamic prompt that encourages variety
     const basePrompt = `Generate a COMPLETELY UNIQUE and CREATIVE Instagram caption
@@ -44,7 +49,36 @@ export async function generateCaptionAndHashtags(
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
 
-    // Prepare the API request for DeepSeek
+    // Try DeepSeek API first
+    let result = await tryDeepSeekAPI(basePrompt);
+    
+    // If DeepSeek fails, try OpenAI as fallback
+    if (result.error) {
+      console.log("DeepSeek API failed, trying OpenAI instead...");
+      result = await tryOpenAIAPI(basePrompt);
+    }
+    
+    // If both APIs fail, use mock data as last resort
+    if (result.error) {
+      console.log("All APIs failed, using mock data");
+      return {
+        ...generateMockData(input),
+        error: "API services unavailable. Using sample content for demonstration."
+      };
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error in caption generation process:", error);
+    return {
+      ...generateMockData(input),
+      error: "Unexpected error occurred. Using sample content for demonstration."
+    };
+  }
+}
+
+async function tryDeepSeekAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
+  try {
     const response = await fetch(DEEPSEEK_API_URL, {
       method: "POST",
       headers: {
@@ -56,7 +90,7 @@ export async function generateCaptionAndHashtags(
         messages: [
           {
             role: "user",
-            content: basePrompt
+            content: prompt
           }
         ],
         temperature: 1.2, // Higher temperature for more creativity
@@ -65,8 +99,9 @@ export async function generateCaptionAndHashtags(
     });
 
     if (!response.ok) {
-      console.error("DeepSeek API error:", await response.text());
-      return generateMockData(input);
+      const errorText = await response.text();
+      console.error("DeepSeek API error:", errorText);
+      return { caption: "", hashtags: [], error: `DeepSeek API: ${errorText}` };
     }
 
     const data = await response.json();
@@ -84,11 +119,61 @@ export async function generateCaptionAndHashtags(
       };
     } catch (parseError) {
       console.error("Error parsing DeepSeek response:", parseError);
-      return generateMockData(input);
+      return { caption: "", hashtags: [], error: "Failed to parse DeepSeek response" };
     }
   } catch (error) {
-    console.error("Error generating content:", error);
-    return generateMockData(input);
+    console.error("DeepSeek API request failed:", error);
+    return { caption: "", hashtags: [], error: "DeepSeek API request failed" };
+  }
+}
+
+async function tryOpenAIAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
+  try {
+    const response = await fetch(OPENAI_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 1.2,
+        max_tokens: 1000
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("OpenAI API error:", errorText);
+      return { caption: "", hashtags: [], error: `OpenAI API: ${errorText}` };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+
+    try {
+      // Extract JSON from the response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonContent = jsonMatch ? jsonMatch[0] : content;
+      const parsedContent = JSON.parse(jsonContent);
+
+      return {
+        caption: parsedContent.caption || "Failed to generate caption",
+        hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
+      };
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      return { caption: "", hashtags: [], error: "Failed to parse OpenAI response" };
+    }
+  } catch (error) {
+    console.error("OpenAI API request failed:", error);
+    return { caption: "", hashtags: [], error: "OpenAI API request failed" };
   }
 }
 

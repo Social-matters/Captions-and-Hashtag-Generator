@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import ImageUploader from "@/components/ImageUploader";
 import ResultDisplay from "@/components/ResultDisplay";
 import Header from "@/components/Header";
@@ -23,9 +25,11 @@ import {
   GeneratorInput,
   GeneratorResult 
 } from "@/lib/generator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<string>("text");
+  const { toast } = useToast();
   
   const [description, setDescription] = useState<string>("");
   const [niche, setNiche] = useState<string>("");
@@ -60,7 +64,7 @@ const Index = () => {
   };
 
   const handleGenerate = async () => {
-    setResult({ ...result, isLoading: true });
+    setResult({ ...result, isLoading: true, error: undefined });
     setShowResult(false);
     
     try {
@@ -78,10 +82,19 @@ const Index = () => {
       
       const generatedResult = await generateCaptionAndHashtags(input);
       
+      if (generatedResult.error) {
+        toast({
+          title: "API Service Issue",
+          description: "Using demonstration content. Please try again later.",
+          variant: "destructive"
+        });
+      }
+      
       setResult({
         caption: generatedResult.caption,
         hashtags: generatedResult.hashtags,
-        isLoading: false
+        isLoading: false,
+        error: generatedResult.error
       });
       
       setShowResult(true);
@@ -89,7 +102,14 @@ const Index = () => {
       console.error("Error generating content:", error);
       setResult({
         ...result,
-        isLoading: false
+        isLoading: false,
+        error: "Failed to generate content. Please try again."
+      });
+      
+      toast({
+        title: "Generation Failed",
+        description: "There was an error generating your caption. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -109,6 +129,16 @@ const Index = () => {
       <main className="container mx-auto px-4 pb-16">
         <Card className="max-w-4xl mx-auto bg-card text-card-foreground">
           <CardContent className="p-6">
+            {result.error && (
+              <Alert variant="warning" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>API Service Note</AlertTitle>
+                <AlertDescription>
+                  {result.error}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="w-full lg:w-1/2">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -219,6 +249,7 @@ const Index = () => {
                     caption={result.caption} 
                     hashtags={result.hashtags}
                     onRegenerate={handleRegenerate}
+                    isMockData={!!result.error}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center">
