@@ -1,6 +1,6 @@
-// Configuration for DeepSeek API
-const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
-const DEEPSEEK_API_KEY = "sk-26e219cc0c05449db71c747f7e9d231b";
+// Configuration for Claude API
+const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
+const CLAUDE_API_KEY = "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";
 
 export interface GeneratorInput {
   description?: string;
@@ -43,15 +43,17 @@ export async function generateCaptionAndHashtags(
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
 
-    // Prepare the API request
-    const response = await fetch(DEEPSEEK_API_URL, {
+    // Prepare the API request for Claude
+    const response = await fetch(CLAUDE_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+        "x-api-key": CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "claude-3-opus-20240229",
+        max_tokens: 1000,
         messages: [
           {
             role: "user",
@@ -59,20 +61,17 @@ export async function generateCaptionAndHashtags(
           }
         ],
         temperature: 1.2, // Higher temperature for more creativity
-        max_tokens: 1000,
         top_p: 0.95,
-        frequency_penalty: 1.5, // Increased to reduce repetition
-        presence_penalty: 1.2 // Increased to encourage new content
       })
     });
 
     if (!response.ok) {
-      console.error("DeepSeek API error:", await response.text());
+      console.error("Claude API error:", await response.text());
       return generateMockData(input);
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = data.content?.[0]?.text || "";
 
     try {
       // Extract JSON from the response
@@ -85,7 +84,7 @@ export async function generateCaptionAndHashtags(
         hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
       };
     } catch (parseError) {
-      console.error("Error parsing DeepSeek response:", parseError);
+      console.error("Error parsing Claude response:", parseError);
       return generateMockData(input);
     }
   } catch (error) {

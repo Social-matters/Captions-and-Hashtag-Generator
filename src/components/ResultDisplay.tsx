@@ -96,7 +96,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ caption, hashtags, onRege
             {hashtagsCopied ? "Copied!" : "Copy Hashtags"}
           </Button>
         </div>
-        <div className="rounded-lg bg-gray-50 p-4">
+        <div className="rounded-lg bg-gray-800 p-4">
           <div className="flex flex-wrap">
             {hashtags.map((tag, index) => (
               <span key={index} className="hashtag">
