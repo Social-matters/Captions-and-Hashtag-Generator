@@ -1,7 +1,7 @@
 
-// Configuration for Claude API
-const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_API_KEY = "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";
+// Configuration for DeepSeek API
+const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
+const DEEPSEEK_API_KEY = "sk-6ea32ade1f634df9a42848510db43eba";
 
 export interface GeneratorInput {
   description?: string;
@@ -44,25 +44,15 @@ export async function generateCaptionAndHashtags(
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
 
-    // Check if we're in a test or development environment where CORS might be an issue
-    if (window.location.hostname === 'localhost' || 
-        window.location.hostname.includes('lovableproject.com')) {
-      // For development environment, use mock data with more variety
-      console.log("Using mock data in development environment");
-      return generateMockData(input);
-    }
-
-    // Prepare the API request for Claude
-    const response = await fetch(CLAUDE_API_URL, {
+    // Prepare the API request for DeepSeek
+    const response = await fetch(DEEPSEEK_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": CLAUDE_API_KEY,
-        "anthropic-version": "2023-06-01"
+        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
-        model: "claude-3-opus-20240229",
-        max_tokens: 1000,
+        model: "deepseek-chat",
         messages: [
           {
             role: "user",
@@ -70,17 +60,17 @@ export async function generateCaptionAndHashtags(
           }
         ],
         temperature: 1.2, // Higher temperature for more creativity
-        top_p: 0.95,
+        max_tokens: 1000
       })
     });
 
     if (!response.ok) {
-      console.error("Claude API error:", await response.text());
+      console.error("DeepSeek API error:", await response.text());
       return generateMockData(input);
     }
 
     const data = await response.json();
-    const content = data.content?.[0]?.text || "";
+    const content = data.choices?.[0]?.message?.content || "";
 
     try {
       // Extract JSON from the response
@@ -93,7 +83,7 @@ export async function generateCaptionAndHashtags(
         hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
       };
     } catch (parseError) {
-      console.error("Error parsing Claude response:", parseError);
+      console.error("Error parsing DeepSeek response:", parseError);
       return generateMockData(input);
     }
   } catch (error) {
