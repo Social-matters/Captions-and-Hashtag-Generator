@@ -1,7 +1,6 @@
-
 // Configuration for ChatGPT API
 const CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions";
-const CHATGPT_API_KEY = "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";
+const CHATGPT_API_KEY = "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";
 
 export interface GeneratorInput {
   description?: string;
