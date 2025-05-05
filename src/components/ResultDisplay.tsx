@@ -54,7 +54,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
   return (
     <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm bg-background">
       {isMockData && (
-        <Alert variant="warning" className="mb-4">
+        <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Currently showing example content. API service is temporarily unavailable.

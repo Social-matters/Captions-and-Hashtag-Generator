@@ -1,11 +1,7 @@
 
-// Configuration for DeepSeek API
-const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
-const DEEPSEEK_API_KEY = "sk-6ea32ade1f634df9a42848510db43eba";
-
-// Fallback to OpenAI if DeepSeek fails
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_API_KEY = "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";
+// Configuration for ChatGPT API
+const CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions";
+const CHATGPT_API_KEY = "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";
 
 export interface GeneratorInput {
   description?: string;
@@ -49,21 +45,15 @@ export async function generateCaptionAndHashtags(
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
 
-    // Try DeepSeek API first
-    let result = await tryDeepSeekAPI(basePrompt);
+    // Try ChatGPT API
+    const result = await callChatGPTAPI(basePrompt);
     
-    // If DeepSeek fails, try OpenAI as fallback
+    // If API fails, use mock data as last resort
     if (result.error) {
-      console.log("DeepSeek API failed, trying OpenAI instead...");
-      result = await tryOpenAIAPI(basePrompt);
-    }
-    
-    // If both APIs fail, use mock data as last resort
-    if (result.error) {
-      console.log("All APIs failed, using mock data");
+      console.log("ChatGPT API failed, using mock data");
       return {
         ...generateMockData(input),
-        error: "API services unavailable. Using sample content for demonstration."
+        error: "API service unavailable. Using sample content for demonstration."
       };
     }
     
@@ -77,16 +67,17 @@ export async function generateCaptionAndHashtags(
   }
 }
 
-async function tryDeepSeekAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
+async function callChatGPTAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
   try {
-    const response = await fetch(DEEPSEEK_API_URL, {
+    console.log("Calling ChatGPT API...");
+    const response = await fetch(CHATGPT_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+        "Authorization": `Bearer ${CHATGPT_API_KEY}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "gpt-4o-mini", // Using GPT-4o mini for optimal price/performance
         messages: [
           {
             role: "user",
@@ -100,8 +91,8 @@ async function tryDeepSeekAPI(prompt: string): Promise<{ caption: string; hashta
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("DeepSeek API error:", errorText);
-      return { caption: "", hashtags: [], error: `DeepSeek API: ${errorText}` };
+      console.error("ChatGPT API error:", errorText);
+      return { caption: "", hashtags: [], error: `ChatGPT API: ${errorText}` };
     }
 
     const data = await response.json();
@@ -118,62 +109,12 @@ async function tryDeepSeekAPI(prompt: string): Promise<{ caption: string; hashta
         hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
       };
     } catch (parseError) {
-      console.error("Error parsing DeepSeek response:", parseError);
-      return { caption: "", hashtags: [], error: "Failed to parse DeepSeek response" };
+      console.error("Error parsing ChatGPT response:", parseError);
+      return { caption: "", hashtags: [], error: "Failed to parse ChatGPT response" };
     }
   } catch (error) {
-    console.error("DeepSeek API request failed:", error);
-    return { caption: "", hashtags: [], error: "DeepSeek API request failed" };
-  }
-}
-
-async function tryOpenAIAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
-  try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 1.2,
-        max_tokens: 1000
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI API error:", errorText);
-      return { caption: "", hashtags: [], error: `OpenAI API: ${errorText}` };
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
-
-    try {
-      // Extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const jsonContent = jsonMatch ? jsonMatch[0] : content;
-      const parsedContent = JSON.parse(jsonContent);
-
-      return {
-        caption: parsedContent.caption || "Failed to generate caption",
-        hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
-      };
-    } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError);
-      return { caption: "", hashtags: [], error: "Failed to parse OpenAI response" };
-    }
-  } catch (error) {
-    console.error("OpenAI API request failed:", error);
-    return { caption: "", hashtags: [], error: "OpenAI API request failed" };
+    console.error("ChatGPT API request failed:", error);
+    return { caption: "", hashtags: [], error: "ChatGPT API request failed" };
   }
 }
 

@@ -130,7 +130,7 @@ const Index = () => {
         <Card className="max-w-4xl mx-auto bg-card text-card-foreground">
           <CardContent className="p-6">
             {result.error && (
-              <Alert variant="warning" className="mb-4">
+              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>API Service Note</AlertTitle>
                 <AlertDescription>
