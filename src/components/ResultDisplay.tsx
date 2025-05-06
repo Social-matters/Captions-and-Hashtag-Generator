@@ -14,8 +14,7 @@ interface ResultDisplayProps {
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ 
   caption, 
   hashtags, 
-  onRegenerate,
-  isMockData = false 
+  onRegenerate
 }) => {
   const { toast } = useToast();
   const [captionCopied, setCaptionCopied] = React.useState(false);
@@ -50,9 +49,12 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
     });
   };
 
+  // Display info or error message if no hashtags
+  const isError = caption.includes("API key") || caption.includes("error");
+
   return (
     <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm bg-background">
-      {onRegenerate && (
+      {onRegenerate && !isError && (
         <Button 
           onClick={onRegenerate}
           variant="outline"
@@ -65,60 +67,71 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">Your Caption</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyCaption}
-            className="h-8"
-          >
-            {captionCopied ? (
-              <Check className="mr-2 h-4 w-4" />
-            ) : (
-              <Copy className="mr-2 h-4 w-4" />
-            )}
-            {captionCopied ? "Copied!" : "Copy Caption"}
-          </Button>
+          <h3 className="text-lg font-semibold text-foreground">
+            {isError ? "Important Message" : "Your Caption"}
+          </h3>
+          {!isError && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyCaption}
+              className="h-8"
+            >
+              {captionCopied ? (
+                <Check className="mr-2 h-4 w-4" />
+              ) : (
+                <Copy className="mr-2 h-4 w-4" />
+              )}
+              {captionCopied ? "Copied!" : "Copy Caption"}
+            </Button>
+          )}
         </div>
-        <div className="rounded-lg bg-gray-800 p-4">
-          <p className="whitespace-pre-line text-white">{caption}</p>
+        <div className={`rounded-lg ${isError ? "bg-yellow-100 text-yellow-800" : "bg-gray-800"} p-4`}>
+          <p className="whitespace-pre-line text-current">{caption}</p>
+          {isError && (
+            <p className="mt-4 font-semibold">Please enter a valid OpenAI API key to generate content.</p>
+          )}
         </div>
       </div>
 
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Your Hashtags</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyHashtags}
-            className="h-8"
-          >
-            {hashtagsCopied ? (
-              <Check className="mr-2 h-4 w-4" />
-            ) : (
-              <Copy className="mr-2 h-4 w-4" />
-            )}
-            {hashtagsCopied ? "Copied!" : "Copy Hashtags"}
-          </Button>
-        </div>
-        <div className="rounded-lg bg-gray-800 p-4">
-          <div className="flex flex-wrap">
-            {hashtags.map((tag, index) => (
-              <span key={index} className="hashtag text-white mr-2 mb-2">
-                {tag}
-              </span>
-            ))}
+      {hashtags.length > 0 && !isError && (
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Your Hashtags</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyHashtags}
+              className="h-8"
+            >
+              {hashtagsCopied ? (
+                <Check className="mr-2 h-4 w-4" />
+              ) : (
+                <Copy className="mr-2 h-4 w-4" />
+              )}
+              {hashtagsCopied ? "Copied!" : "Copy Hashtags"}
+            </Button>
+          </div>
+          <div className="rounded-lg bg-gray-800 p-4">
+            <div className="flex flex-wrap">
+              {hashtags.map((tag, index) => (
+                <span key={index} className="hashtag text-white mr-2 mb-2">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <Button 
-        onClick={handleCopyAll} 
-        className="w-full bg-gray-600 hover:bg-gray-700 text-white"
-      >
-        <Copy className="mr-2 h-4 w-4" /> Copy Caption & Hashtags
-      </Button>
+      {hashtags.length > 0 && !isError && (
+        <Button 
+          onClick={handleCopyAll} 
+          className="w-full bg-gray-600 hover:bg-gray-700 text-white"
+        >
+          <Copy className="mr-2 h-4 w-4" /> Copy Caption & Hashtags
+        </Button>
+      )}
     </div>
   );
 };

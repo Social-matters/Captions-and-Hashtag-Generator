@@ -1,7 +1,8 @@
+
 // Configuration for ChatGPT API
 const CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions";
-// Updated: Using the provided API key
-const DEFAULT_CHATGPT_API_KEY = "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";
+// Using an empty default key - we'll require users to provide their own
+const DEFAULT_CHATGPT_API_KEY = "";
 
 export interface GeneratorInput {
   description?: string;
@@ -46,10 +47,16 @@ export async function generateCaptionAndHashtags(
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
 
-    // Always try ChatGPT API first, no fallback to demo mode
-    const result = await callChatGPTAPI(basePrompt, input.apiKey);
+    // Check if API key is provided
+    if (!input.apiKey) {
+      return {
+        caption: "Please provide your OpenAI API key to generate content.",
+        hashtags: [],
+        error: "API key is required. Please enter your OpenAI API key in the form."
+      };
+    }
     
-    // Return the result directly, no fallback to mock data
+    const result = await callChatGPTAPI(basePrompt, input.apiKey);
     return result;
   } catch (error) {
     console.error("Error in caption generation process:", error);
@@ -63,15 +70,21 @@ export async function generateCaptionAndHashtags(
 
 async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
   try {
-    // Use provided API key or default
-    const currentApiKey = apiKey || DEFAULT_CHATGPT_API_KEY;
+    // Ensure API key is provided
+    if (!apiKey) {
+      return { 
+        caption: "No API key provided", 
+        hashtags: [],
+        error: "OpenAI API key is required. Please provide a valid key."
+      };
+    }
     
     console.log("Calling ChatGPT API...");
     const response = await fetch(CHATGPT_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${currentApiKey}`
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini", // Using GPT-4o mini for optimal price/performance
@@ -89,6 +102,16 @@ async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ captio
     if (!response.ok) {
       const errorText = await response.text();
       console.error("ChatGPT API error:", errorText);
+      
+      // Handle specific error codes
+      if (response.status === 401) {
+        return { 
+          caption: "", 
+          hashtags: [], 
+          error: "Invalid API key. Please check your OpenAI API key and try again."
+        };
+      }
+      
       return { caption: "", hashtags: [], error: `API error: ${response.status}. Please check your API key.` };
     }
 
@@ -134,83 +157,4 @@ export async function fileToDataUrl(input: GeneratorInput): Promise<string | nul
     reader.onerror = reject;
     reader.readAsDataURL(input.imageFile);
   });
-}
-
-// Keeping this function for backwards compatibility but it won't be used
-function generateMockData(input: GeneratorInput): { caption: string; hashtags: string[] } {
-  // Add generation count to ensure different captions each time
-  const generationCount = input.generationCount || 0;
-  
-  // More varied caption templates
-  const defaultCaptions = [
-    "✨ Embracing every moment of this beautiful journey. The path may not always be clear, but the adventure is worth it!",
-    "🌟 Life is about creating yourself, not finding yourself. Every day is a new opportunity to become a better version of you.",
-    "🚀 Taking small steps every day. Progress isn't always visible, but it's happening. Keep going!",
-    "🌈 Sometimes the smallest things take up the most room in your heart. Cherishing these little moments.",
-    "🔥 The dream is free, but the hustle is sold separately. Working on turning dreams into reality one day at a time.",
-    "💭 Not everything you face in life can be changed, but nothing can be changed until you face it.",
-    "🌊 Finding beauty in the journey, not just the destination. Each step reveals something new.",
-    "💫 The best views come after the hardest climbs. Never stop pushing your limits.",
-    "🌱 Growth requires patience. Plant the seeds today for tomorrow's garden.",
-    "🎭 Life isn't about finding yourself, it's about creating yourself. Write your own story.",
-    "🧩 Every challenge is just a puzzle waiting to be solved. Find the right pieces.",
-    "⏱️ Time is the most valuable currency. Spend it on what truly matters.",
-    "📸 Capturing this moment not just with my camera, but with my heart.",
-    "🌙 Even in darkness, there are stars. Look up and find your light."
-  ];
-  
-  // More varied hashtag options
-  const defaultHashtags = [
-    "#instagood", "#photooftheday", "#love", "#fashion", "#beautiful", 
-    "#happy", "#cute", "#tbt", "#like4like", "#followme", 
-    "#picoftheday", "#follow", "#me", "#selfie", "#summer",
-    "#art", "#instadaily", "#friends", "#repost", "#nature",
-    "#smile", "#style", "#instalike", "#food", "#family",
-    "#travel", "#likeforlike", "#fitness", "#igers", "#tagsforlikes",
-    "#handmade", "#lifestyle", "#nofilter", "#sustainability", "#wellness",
-    "#vibes", "#explore", "#motivation", "#adventure", "#photography",
-    "#positivevibes", "#inspire", "#entrepreneur", "#goals", "#mindfulness"
-  ];
-
-  // Use generation count to select different caption each time
-  const captionIndex = (generationCount % defaultCaptions.length);
-  let caption = defaultCaptions[captionIndex];
-  
-  // If keywords were provided, try to include them in the caption
-  if (input.keywords) {
-    const keywordsList = input.keywords.split(',').map(k => k.trim());
-    if (keywordsList.length > 0) {
-      const randomKeyword = keywordsList[Math.floor(Math.random() * keywordsList.length)];
-      
-      // Different ways to incorporate keywords based on generation count
-      const incorporations = [
-        ` ${randomKeyword} is truly inspiring!`,
-        ` When it comes to ${randomKeyword}, nothing compares.`,
-        ` The magic of ${randomKeyword} never ceases to amaze me.`,
-        ` Finding joy in ${randomKeyword} every single day.`,
-        ` ${randomKeyword} changes everything about how I see the world.`
-      ];
-      
-      const incorporationIndex = generationCount % incorporations.length;
-      caption += incorporations[incorporationIndex];
-    }
-  }
-
-  // Select random hashtags based on count and ensure they're different each time
-  const seed = input.randomSeed || generationCount.toString();
-  const seedNum = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
-  // Create a pseudo-random but deterministic shuffle based on the seed
-  const shuffled = [...defaultHashtags].sort((a, b) => {
-    const hashA = (a.charCodeAt(0) * seedNum) % 100;
-    const hashB = (b.charCodeAt(0) * seedNum) % 100;
-    return hashA - hashB;
-  });
-  
-  const hashtags = shuffled.slice(0, input.hashtagCount);
-
-  return {
-    caption,
-    hashtags,
-  };
 }
