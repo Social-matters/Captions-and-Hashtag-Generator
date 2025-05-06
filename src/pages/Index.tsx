@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,9 +86,9 @@ const Index = () => {
       
       if (generatedResult.error) {
         toast({
-          title: "Demo Mode Active",
-          description: "Using demonstration content. Add an OpenAI API key for real results.",
-          variant: "default"
+          title: "Generation Issue",
+          description: generatedResult.error,
+          variant: "destructive"
         });
       }
       
@@ -130,19 +131,10 @@ const Index = () => {
       <main className="container mx-auto px-4 pb-16">
         <Card className="max-w-4xl mx-auto bg-card text-card-foreground">
           <CardContent className="p-6">
-            <Alert variant="default" className="mb-4">
-              <Info className="h-4 w-4" />
-              <AlertTitle>Demo Mode</AlertTitle>
-              <AlertDescription>
-                This application is running in demonstration mode with sample captions. 
-                For real AI-generated captions, you need to add your own OpenAI API key.
-              </AlertDescription>
-            </Alert>
-            
             {result.error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>API Service Note</AlertTitle>
+                <AlertTitle>Generation Issue</AlertTitle>
                 <AlertDescription>
                   {result.error}
                 </AlertDescription>
@@ -195,7 +187,7 @@ const Index = () => {
                 
                 <div className="space-y-4 mt-6">
                   <div className="space-y-2">
-                    <Label htmlFor="apiKey">OpenAI API Key (optional)</Label>
+                    <Label htmlFor="apiKey">OpenAI API Key</Label>
                     <Input
                       id="apiKey"
                       type="password"
@@ -204,7 +196,7 @@ const Index = () => {
                       onChange={(e) => setApiKey(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Add your OpenAI API key to generate real captions (not stored on server)
+                      Your API key is used securely and not stored on our servers
                     </p>
                   </div>
                   
@@ -273,7 +265,7 @@ const Index = () => {
                     caption={result.caption} 
                     hashtags={result.hashtags}
                     onRegenerate={handleRegenerate}
-                    isMockData={!!result.error}
+                    isMockData={false}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center">

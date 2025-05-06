@@ -1,7 +1,7 @@
 // Configuration for ChatGPT API
 const CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions";
-// Default to empty key to trigger mock data
-const DEFAULT_CHATGPT_API_KEY = ""; 
+// Updated: Using the provided API key
+const DEFAULT_CHATGPT_API_KEY = "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";
 
 export interface GeneratorInput {
   description?: string;
@@ -46,24 +46,17 @@ export async function generateCaptionAndHashtags(
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
 
-    // Try ChatGPT API
+    // Always try ChatGPT API first, no fallback to demo mode
     const result = await callChatGPTAPI(basePrompt, input.apiKey);
     
-    // If API fails, use mock data as last resort
-    if (result.error) {
-      console.log("ChatGPT API failed, using mock data");
-      return {
-        ...generateMockData(input),
-        error: "Using sample content for demonstration. Add your OpenAI API key for real AI-generated captions."
-      };
-    }
-    
+    // Return the result directly, no fallback to mock data
     return result;
   } catch (error) {
     console.error("Error in caption generation process:", error);
     return {
-      ...generateMockData(input),
-      error: "Unexpected error occurred. Using sample content for demonstration."
+      caption: "Error generating content. Please try again.",
+      hashtags: [],
+      error: "Failed to generate content. Please check your API key and try again."
     };
   }
 }
@@ -73,15 +66,6 @@ async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ captio
     // Use provided API key or default
     const currentApiKey = apiKey || DEFAULT_CHATGPT_API_KEY;
     
-    // Check if we have a valid API key (should start with sk- and be longer than 3 chars)
-    if (!currentApiKey || currentApiKey.length < 10 || !currentApiKey.startsWith("sk-")) {
-      return { 
-        caption: "", 
-        hashtags: [], 
-        error: "No valid OpenAI API key provided. Using demonstration content." 
-      };
-    }
-
     console.log("Calling ChatGPT API...");
     const response = await fetch(CHATGPT_API_URL, {
       method: "POST",
@@ -119,15 +103,24 @@ async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ captio
 
       return {
         caption: parsedContent.caption || "Failed to generate caption",
-        hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : []
+        hashtags: Array.isArray(parsedContent.hashtags) ? parsedContent.hashtags : [],
+        error: undefined
       };
     } catch (parseError) {
       console.error("Error parsing ChatGPT response:", parseError);
-      return { caption: "", hashtags: [], error: "Failed to parse API response" };
+      return { 
+        caption: content,  // Return raw content if JSON parsing fails
+        hashtags: [], 
+        error: "The AI generated a response, but it wasn't in the expected format."
+      };
     }
   } catch (error) {
     console.error("ChatGPT API request failed:", error);
-    return { caption: "", hashtags: [], error: "API request failed. Please try again." };
+    return { 
+      caption: "", 
+      hashtags: [], 
+      error: "API request failed. Please try again."
+    };
   }
 }
 
@@ -143,7 +136,7 @@ export async function fileToDataUrl(input: GeneratorInput): Promise<string | nul
   });
 }
 
-// Fallback function to generate mock data with more variety
+// Keeping this function for backwards compatibility but it won't be used
 function generateMockData(input: GeneratorInput): { caption: string; hashtags: string[] } {
   // Add generation count to ensure different captions each time
   const generationCount = input.generationCount || 0;

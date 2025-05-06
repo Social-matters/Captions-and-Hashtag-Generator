@@ -1,9 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Copy, Check, RefreshCw } from "lucide-react";
+import { Copy, Check, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ResultDisplayProps {
   caption: string;
@@ -53,15 +52,6 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
 
   return (
     <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm bg-background">
-      {isMockData && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Currently showing example content. API service is temporarily unavailable.
-          </AlertDescription>
-        </Alert>
-      )}
-      
       {onRegenerate && (
         <Button 
           onClick={onRegenerate}
