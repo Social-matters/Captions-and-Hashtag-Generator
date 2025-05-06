@@ -1,6 +1,7 @@
 // Configuration for ChatGPT API
 const CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions";
-const CHATGPT_API_KEY = "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";
+// Default to empty key to trigger mock data
+const DEFAULT_CHATGPT_API_KEY = ""; 
 
 export interface GeneratorInput {
   description?: string;
@@ -10,6 +11,7 @@ export interface GeneratorInput {
   imageFile?: File | null;
   randomSeed?: string;
   generationCount?: number;
+  apiKey?: string;
 }
 
 export interface GeneratorResult {
@@ -45,14 +47,14 @@ export async function generateCaptionAndHashtags(
       }`;
 
     // Try ChatGPT API
-    const result = await callChatGPTAPI(basePrompt);
+    const result = await callChatGPTAPI(basePrompt, input.apiKey);
     
     // If API fails, use mock data as last resort
     if (result.error) {
       console.log("ChatGPT API failed, using mock data");
       return {
         ...generateMockData(input),
-        error: "API service unavailable. Using sample content for demonstration."
+        error: "Using sample content for demonstration. Add your OpenAI API key for real AI-generated captions."
       };
     }
     
@@ -66,14 +68,26 @@ export async function generateCaptionAndHashtags(
   }
 }
 
-async function callChatGPTAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
+async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
   try {
+    // Use provided API key or default
+    const currentApiKey = apiKey || DEFAULT_CHATGPT_API_KEY;
+    
+    // Check if we have a valid API key (should start with sk- and be longer than 3 chars)
+    if (!currentApiKey || currentApiKey.length < 10 || !currentApiKey.startsWith("sk-")) {
+      return { 
+        caption: "", 
+        hashtags: [], 
+        error: "No valid OpenAI API key provided. Using demonstration content." 
+      };
+    }
+
     console.log("Calling ChatGPT API...");
     const response = await fetch(CHATGPT_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${CHATGPT_API_KEY}`
+        "Authorization": `Bearer ${currentApiKey}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini", // Using GPT-4o mini for optimal price/performance
@@ -91,7 +105,7 @@ async function callChatGPTAPI(prompt: string): Promise<{ caption: string; hashta
     if (!response.ok) {
       const errorText = await response.text();
       console.error("ChatGPT API error:", errorText);
-      return { caption: "", hashtags: [], error: `ChatGPT API: ${errorText}` };
+      return { caption: "", hashtags: [], error: `API error: ${response.status}. Please check your API key.` };
     }
 
     const data = await response.json();
@@ -109,11 +123,11 @@ async function callChatGPTAPI(prompt: string): Promise<{ caption: string; hashta
       };
     } catch (parseError) {
       console.error("Error parsing ChatGPT response:", parseError);
-      return { caption: "", hashtags: [], error: "Failed to parse ChatGPT response" };
+      return { caption: "", hashtags: [], error: "Failed to parse API response" };
     }
   } catch (error) {
     console.error("ChatGPT API request failed:", error);
-    return { caption: "", hashtags: [], error: "ChatGPT API request failed" };
+    return { caption: "", hashtags: [], error: "API request failed. Please try again." };
   }
 }
 

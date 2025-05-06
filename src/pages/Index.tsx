@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, Info, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import ImageUploader from "@/components/ImageUploader";
 import ResultDisplay from "@/components/ResultDisplay";
@@ -37,6 +36,7 @@ const Index = () => {
   const [hashtagCount, setHashtagCount] = useState<number>(10);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string>("");
   
   const [result, setResult] = useState<GeneratorResult>({
     caption: "",
@@ -77,16 +77,17 @@ const Index = () => {
         hashtagCount: hashtagCount,
         imageFile: activeTab === "image" ? imageFile : null,
         randomSeed: Math.random().toString(),
-        generationCount: generationCount
+        generationCount: generationCount,
+        apiKey: apiKey.trim() || undefined
       };
       
       const generatedResult = await generateCaptionAndHashtags(input);
       
       if (generatedResult.error) {
         toast({
-          title: "API Service Issue",
-          description: "Using demonstration content. Please try again later.",
-          variant: "destructive"
+          title: "Demo Mode Active",
+          description: "Using demonstration content. Add an OpenAI API key for real results.",
+          variant: "default"
         });
       }
       
@@ -129,6 +130,15 @@ const Index = () => {
       <main className="container mx-auto px-4 pb-16">
         <Card className="max-w-4xl mx-auto bg-card text-card-foreground">
           <CardContent className="p-6">
+            <Alert variant="default" className="mb-4">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Demo Mode</AlertTitle>
+              <AlertDescription>
+                This application is running in demonstration mode with sample captions. 
+                For real AI-generated captions, you need to add your own OpenAI API key.
+              </AlertDescription>
+            </Alert>
+            
             {result.error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
@@ -184,6 +194,20 @@ const Index = () => {
                 </Tabs>
                 
                 <div className="space-y-4 mt-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="apiKey">OpenAI API Key (optional)</Label>
+                    <Input
+                      id="apiKey"
+                      type="password"
+                      placeholder="Enter your OpenAI API key (starts with sk-)"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Add your OpenAI API key to generate real captions (not stored on server)
+                    </p>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="keywords">Keywords (Optional)</Label>
                     <Input
