@@ -1,8 +1,8 @@
 
-// Configuration for ChatGPT API
-const CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions";
-// Using an empty default key - we'll require users to provide their own
-const DEFAULT_CHATGPT_API_KEY = "";
+// Configuration for Gemini API
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+// Set Gemini API key directly
+const GEMINI_API_KEY = "AIzaSyBqOJt6r_gRahFTOLFsZ-DvAbiJMVNOmCM";
 
 export interface GeneratorInput {
   description?: string;
@@ -12,7 +12,6 @@ export interface GeneratorInput {
   imageFile?: File | null;
   randomSeed?: string;
   generationCount?: number;
-  apiKey?: string;
 }
 
 export interface GeneratorResult {
@@ -46,77 +45,57 @@ export async function generateCaptionAndHashtags(
         "caption": "your unique caption here",
         "hashtags": ["#hashtag1", "#hashtag2", ...]
       }`;
-
-    // Check if API key is provided
-    if (!input.apiKey) {
-      return {
-        caption: "Please provide your OpenAI API key to generate content.",
-        hashtags: [],
-        error: "API key is required. Please enter your OpenAI API key in the form."
-      };
-    }
     
-    const result = await callChatGPTAPI(basePrompt, input.apiKey);
+    const result = await callGeminiAPI(basePrompt);
     return result;
   } catch (error) {
     console.error("Error in caption generation process:", error);
     return {
       caption: "Error generating content. Please try again.",
       hashtags: [],
-      error: "Failed to generate content. Please check your API key and try again."
+      error: "Failed to generate content. Please try again."
     };
   }
 }
 
-async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
+async function callGeminiAPI(prompt: string): Promise<{ caption: string; hashtags: string[]; error?: string }> {
   try {
-    // Ensure API key is provided
-    if (!apiKey) {
-      return { 
-        caption: "No API key provided", 
-        hashtags: [],
-        error: "OpenAI API key is required. Please provide a valid key."
-      };
-    }
-    
-    console.log("Calling ChatGPT API...");
-    const response = await fetch(CHATGPT_API_URL, {
+    console.log("Calling Gemini API...");
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Using GPT-4o mini for optimal price/performance
-        messages: [
+        contents: [
           {
-            role: "user",
-            content: prompt
+            parts: [
+              {
+                text: prompt
+              }
+            ]
           }
         ],
-        temperature: 1.2, // Higher temperature for more creativity
-        max_tokens: 1000
+        generationConfig: {
+          temperature: 1.2,
+          maxOutputTokens: 1000
+        }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("ChatGPT API error:", errorText);
+      console.error("Gemini API error:", errorText);
       
-      // Handle specific error codes
-      if (response.status === 401) {
-        return { 
-          caption: "", 
-          hashtags: [], 
-          error: "Invalid API key. Please check your OpenAI API key and try again."
-        };
-      }
-      
-      return { caption: "", hashtags: [], error: `API error: ${response.status}. Please check your API key.` };
+      return { 
+        caption: "Failed to generate content. The AI service is currently unavailable.", 
+        hashtags: [], 
+        error: `API error: ${response.status}. Please try again later.` 
+      };
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     try {
       // Extract JSON from the response
@@ -130,19 +109,28 @@ async function callChatGPTAPI(prompt: string, apiKey?: string): Promise<{ captio
         error: undefined
       };
     } catch (parseError) {
-      console.error("Error parsing ChatGPT response:", parseError);
+      console.error("Error parsing Gemini response:", parseError);
+      
+      // If JSON parsing fails, try to extract caption and hashtags using regex
+      const captionMatch = content.match(/caption["']?\s*:\s*["']([^"']+)["']/);
+      const hashtagsMatch = content.match(/hashtags["']?\s*:\s*\[(.*?)\]/s);
+      
+      const caption = captionMatch ? captionMatch[1] : "Failed to parse caption";
+      const hashtagsStr = hashtagsMatch ? hashtagsMatch[1] : "";
+      const hashtags = hashtagsStr.match(/#\w+/g) || [];
+      
       return { 
-        caption: content,  // Return raw content if JSON parsing fails
-        hashtags: [], 
+        caption: content.includes("caption") ? caption : content,
+        hashtags: hashtags,
         error: "The AI generated a response, but it wasn't in the expected format."
       };
     }
   } catch (error) {
-    console.error("ChatGPT API request failed:", error);
+    console.error("Gemini API request failed:", error);
     return { 
-      caption: "", 
+      caption: "Failed to connect to the AI service.", 
       hashtags: [], 
-      error: "API request failed. Please try again."
+      error: "API request failed. Please try again later."
     };
   }
 }

@@ -49,8 +49,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
     });
   };
 
-  // Display info or error message if no hashtags
-  const isError = caption.includes("API key") || caption.includes("error");
+  // Display info or error message if service is unavailable
+  const isError = !caption || caption.includes("error") || caption.includes("Failed");
 
   return (
     <div className="w-full space-y-6 rounded-lg border p-6 shadow-sm bg-background">
@@ -89,7 +89,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
         <div className={`rounded-lg ${isError ? "bg-yellow-100 text-yellow-800" : "bg-gray-800"} p-4`}>
           <p className="whitespace-pre-line text-current">{caption}</p>
           {isError && (
-            <p className="mt-4 font-semibold">Please enter a valid OpenAI API key to generate content.</p>
+            <p className="mt-4 font-semibold">Our caption generation service is currently experiencing issues. Please try again later.</p>
           )}
         </div>
       </div>

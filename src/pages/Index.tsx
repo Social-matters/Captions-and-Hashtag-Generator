@@ -37,7 +37,6 @@ const Index = () => {
   const [hashtagCount, setHashtagCount] = useState<number>(10);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string>("");
   
   const [result, setResult] = useState<GeneratorResult>({
     caption: "",
@@ -78,8 +77,7 @@ const Index = () => {
         hashtagCount: hashtagCount,
         imageFile: activeTab === "image" ? imageFile : null,
         randomSeed: Math.random().toString(),
-        generationCount: generationCount,
-        apiKey: apiKey.trim() || undefined
+        generationCount: generationCount
       };
       
       const generatedResult = await generateCaptionAndHashtags(input);
@@ -186,20 +184,6 @@ const Index = () => {
                 </Tabs>
                 
                 <div className="space-y-4 mt-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="apiKey">OpenAI API Key</Label>
-                    <Input
-                      id="apiKey"
-                      type="password"
-                      placeholder="Enter your OpenAI API key (starts with sk-)"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your API key is used securely and not stored on our servers
-                    </p>
-                  </div>
-                  
                   <div className="space-y-2">
                     <Label htmlFor="keywords">Keywords (Optional)</Label>
                     <Input
